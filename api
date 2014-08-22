@@ -1,0 +1,104 @@
+<?php
+/**
+* FyunOS API v1.0beta
+*/
+
+/**
+* 名称验证 “返回数字类型”
+* 
+* 1000 名称被占用
+* 1001 名称正常
+* 1002 名称参数错误
+* 
+*/
+
+/**
+* 通过手机号码生成序列号 “返回数字类型”
+* 
+* 1001 生成序列号成功，序列号发送到手机
+* 1002 电话参数错误
+* 1003 该电话号码已经申请过
+* 
+*/
+
+/**
+* 通过手机号码生成序列号 “返回数字类型”
+* 
+* 1001 生成序列号成功，序列号发送到手机
+* 1002 电话参数错误
+* 1003 该电话号码已经申请过
+* 
+*/
+
+/**
+* 创建餐厅 “返回JSON”
+* 
+* 返回创建后的餐厅地址（json格式）则成功否则失败！
+* 
+*/
+
+header('Content-Type:text/html;charset=utf-8');
+
+//==================================================================================
+$user = 'admin';   //fyunos用户名
+$password='admin';  //fyunos密码
+//==================================================================================
+
+function httpPost($url, $parms) {  
+    $url = $url . $parms;  
+    if (($ch = curl_init($url)) == false) {  
+        throw new Exception(sprintf("curl_init error for url %s.", $url));  
+    }  
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);  
+    curl_setopt($ch, CURLOPT_HEADER, 0);  
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 600);  
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);  
+    if (is_array($parms)) {  
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: multipart/form-data;'));  
+    }  
+    $postResult = @curl_exec($ch);  
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);  
+    if ($postResult === false || $http_code != 200 || curl_errno($ch)) {  
+        $error = curl_error($ch);  
+        curl_close($ch);  
+        throw new Exception("HTTP POST FAILED:$error");  
+    } else {  
+        // $postResult=str_replace("\xEF\xBB\xBF", '', $postResult);  
+        switch (curl_getinfo($ch, CURLINFO_CONTENT_TYPE)) {  
+            case 'application/json':  
+                $postResult = json_decode($postResult);  
+                break;  
+        }  
+        curl_close($ch);  
+        return $postResult;  
+    }  
+}  
+
+$postUrl = "http://os.fuwupu.com/api/";    //api请求地址
+$p=$_GET['p']; 
+
+// ?p=check&name="名称"  【第一步：检测餐厅名称是否可用】
+if ($p =="check") {  
+    $appname = $_GET['appname'];  
+    $parms = "index.php?route=api/do/check&appname=" . $appname . "&user=".$user."&password=".$password;  
+}
+
+// ?p=telephone&telephone="手机号"&appname="名称"  【第二步：通过手机号码生成序列号】
+if ($p =="telephone") {  
+    $telephone = $_GET['telephone'];  
+    $appname = $_GET['appname'];  
+    $parms = "index.php?route=api/do/telephone&telephone=" . $telephone . "&appname=" . $appname . "&user=".$user."&password=".$password;  
+}
+
+// ?p=add&name="名称"&code="申请序列号"&adminUser="后台用户名"&adminPwd="后台密码"  【第三步：创建餐厅】
+if ($p =="add") {     
+    $name = $_GET['name'];
+    $code = $_GET['code'];  
+	$adminUser = $_GET['username'];  
+	$adminPwd = $_GET['password'];  
+    $parms = "index.php?route=api/do/add&name=" . $name . "&code=" . $code . "&adminuser=".$adminUser."&adminpwd=".$adminPwd."&user=".$user."&password=".$password;  
+}
+
+$res = httpPost($postUrl, $parms); //$parms  
+    print_r($res);  
+?>
